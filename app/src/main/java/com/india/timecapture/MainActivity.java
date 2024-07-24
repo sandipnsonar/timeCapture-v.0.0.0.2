@@ -5,8 +5,13 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -15,14 +20,82 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 public class MainActivity extends AppCompatActivity {
-
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private static final int BACKGROUND_LOCATION_PERMISSION_REQUEST_CODE = 2;
+
+    private Spinner spinnerTimeout;
+    private Spinner spinnerDistance;
+    private Button btnSetValues;
+    private TextView selectedTimeout;
+    private TextView selectedDistance;
+    private static final int MINUTES_TO_MILLISECONDS = 60 * 1000;
+
+    private int locationTimeout = 0; // Initialize with 0, will be set later
+    private float minDistance = 0; // Initialize with 0, will be set later
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        spinnerTimeout = findViewById(R.id.spinnerTimeout);
+        spinnerDistance = findViewById(R.id.spinnerDistance);
+        btnSetValues = findViewById(R.id.btnSetValues);
+        selectedTimeout = findViewById(R.id.selectedTimeout);
+        selectedDistance = findViewById(R.id.selectedDistance);
+
+        // Set the adapters for the spinners
+        ArrayAdapter<CharSequence> timeoutAdapter = ArrayAdapter.createFromResource(this, R.array.timeout_intervals, android.R.layout.simple_spinner_item);
+        timeoutAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerTimeout.setAdapter(timeoutAdapter);
+
+        ArrayAdapter<CharSequence> distanceAdapter = ArrayAdapter.createFromResource(this, R.array.distance_intervals, android.R.layout.simple_spinner_item);
+        distanceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerDistance.setAdapter(distanceAdapter);
+
+        // Set the default values in the spinners
+        spinnerTimeout.setSelection(1); // 3 minutes
+        spinnerDistance.setSelection(2); // 50 meters
+
+        // Set the onItemSelectedListener for the spinners
+        //for timeout
+        spinnerTimeout.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String timeoutString = (String) parent.getItemAtPosition(position);
+                locationTimeout = convertMinutesToMilliseconds(Integer.parseInt(timeoutString));
+                selectedTimeout.setText("Selected Timeout: " + timeoutString + " minutes");
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Do nothing
+            }
+        });
+        //for distance
+        spinnerDistance.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String distanceString = (String) parent.getItemAtPosition(position);
+                minDistance = Float.parseFloat(distanceString);
+                selectedDistance.setText("Selected Distance: " + distanceString + " meters");
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Do nothing
+            }
+        });
+
+        // Set the onClickListener for the button
+        btnSetValues.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Call the location service method with the selected values
+                startLocationService(locationTimeout, minDistance);
+                Toast.makeText(MainActivity.this, "Location service started. Timeout: " + locationTimeout + " and Distance: " + minDistance, Toast.LENGTH_SHORT).show();
+            }
+        });
 
         if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
@@ -34,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
         btnViewDates.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(MainActivity.this, "Hello!", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(MainActivity.this, "Hello!", Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(MainActivity.this, ViewDatesActivity.class);
                 startActivity(intent);
             }
@@ -55,36 +128,23 @@ public class MainActivity extends AppCompatActivity {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, BACKGROUND_LOCATION_PERMISSION_REQUEST_CODE);
             } else {
-                startLocationService();
+                startLocationService(locationTimeout, minDistance);
             }
         } else {
-            startLocationService();
+            startLocationService(locationTimeout, minDistance);
         }
     }
 
-    private void startLocationService() {
+    private void startLocationService(int locationTimeout, float minDistance) {
         Intent intent = new Intent(this, LocationService.class);
+        intent.putExtra("locationTimeout", locationTimeout);
+        intent.putExtra("minDistance", minDistance);
         startService(intent);
+        // Log.d(TAG, "New Timeout: " + locationTimeout + ", New Distance: " + minDistance);
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                checkBackgroundLocationPermission();
-                Toast.makeText(MainActivity.this, "Location permission granted.", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(MainActivity.this, "Location permission denied.", Toast.LENGTH_SHORT).show();
-            }
-        } else if (requestCode == BACKGROUND_LOCATION_PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startLocationService();
-                Toast.makeText(MainActivity.this, "Background location permission granted.", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(MainActivity.this, "Background location permission denied.", Toast.LENGTH_SHORT).show();
-            }
-        }
+    private int convertMinutesToMilliseconds(int minutes) {
+        return minutes * MINUTES_TO_MILLISECONDS;
     }
 }
 
@@ -92,18 +152,21 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
 //package com.india.timecapture;
+//
+//import static android.content.ContentValues.TAG;
 //
 //import android.Manifest;
 //import android.content.Intent;
 //import android.content.pm.PackageManager;
-//import android.location.Location;
 //import android.os.Build;
 //import android.os.Bundle;
 //import android.util.Log;
 //import android.view.View;
+//import android.widget.AdapterView;
+//import android.widget.ArrayAdapter;
 //import android.widget.Button;
+//import android.widget.Spinner;
 //import android.widget.Toast;
 //
 //import androidx.annotation.NonNull;
@@ -111,65 +174,75 @@ public class MainActivity extends AppCompatActivity {
 //import androidx.core.app.ActivityCompat;
 //import androidx.core.content.ContextCompat;
 //
-//import com.google.android.gms.location.FusedLocationProviderClient;
-//import com.google.android.gms.location.LocationCallback;
-//import com.google.android.gms.location.LocationRequest;
-//import com.google.android.gms.location.LocationRequest.Builder;
-//import com.google.android.gms.location.LocationResult;
-//import com.google.android.gms.location.LocationServices;
-//
-//import java.text.SimpleDateFormat;
-//import java.util.Date;
-//import java.util.Locale;
-//
 //public class MainActivity extends AppCompatActivity {
-//
-//    private static final String TAG = "MainActivity";
 //    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
 //    private static final int BACKGROUND_LOCATION_PERMISSION_REQUEST_CODE = 2;
 //
-//    private FusedLocationProviderClient fusedLocationClient;
-//    private LocationRequest locationRequest;
-//    private LocationCallback locationCallback;
-//    private Location lastLocation;
-//    private DB_Helper dbHelper;
+//    private Spinner spinnerTimeout;
+//    private Spinner spinnerDistance;
+//    private Button btnSetValues;
+//    private static final int MINUTES_TO_MILLISECONDS = 60 * 1000;
+//
+//    private int locationTimeout = 0; // Initialize with 0, will be set later
+//    private float minDistance = 0; // Initialize with 0, will be set later
 //
 //    @Override
 //    protected void onCreate(Bundle savedInstanceState) {
 //        super.onCreate(savedInstanceState);
 //        setContentView(R.layout.activity_main);
 //
-//        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-//        dbHelper = new DB_Helper(this);
+//        spinnerTimeout = findViewById(R.id.spinnerTimeout);
+//        spinnerDistance = findViewById(R.id.spinnerDistance);
+//        btnSetValues = findViewById(R.id.btnSetValues);
 //
-//        locationRequest = new Builder(1000) // Request location updates every 1000 milliseconds (1 second)
-//                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-//                .setMinUpdateDistanceMeters(0) // Minimum displacement to trigger an update
-//                .build();
+//        // Set the adapters for the spinners
+//        ArrayAdapter<CharSequence> timeoutAdapter = ArrayAdapter.createFromResource(this, R.array.timeout_intervals, android.R.layout.simple_spinner_item);
+//        timeoutAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+//        spinnerTimeout.setAdapter(timeoutAdapter);
 //
-//        locationCallback = new LocationCallback() {
+//        ArrayAdapter<CharSequence> distanceAdapter = ArrayAdapter.createFromResource(this, R.array.distance_intervals, android.R.layout.simple_spinner_item);
+//        distanceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+//        spinnerDistance.setAdapter(distanceAdapter);
+//
+//        // Set the default values in the spinners
+//        spinnerTimeout.setSelection(1); // 3 minutes
+//        spinnerDistance.setSelection(2); // 50 meters
+//
+//        // Set the onItemSelectedListener for the spinners
+//        spinnerTimeout.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 //            @Override
-//            public void onLocationResult(@NonNull LocationResult locationResult) {
-//                if (locationResult == null) {
-//                    return;
-//                }
-//
-//                for (Location location : locationResult.getLocations()) {
-//                    Log.d(TAG, "New location: " + location.getLatitude() + ", " + location.getLongitude());
-//
-//                    // Check if the location has moved at least 1 meter
-//                    if (lastLocation == null || lastLocation.distanceTo(location) >= 50) {
-//                        lastLocation = location;
-//
-//                        String currentDateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
-//                        dbHelper.putData(currentDateTime, String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()));
-//                        Log.d(TAG, "Stored data: DateTime: " + currentDateTime + ", Latitude: " + location.getLatitude() + ", Longitude: " + location.getLongitude());
-//
-//                        Toast.makeText(MainActivity.this, "Location stored successfully.", Toast.LENGTH_SHORT).show();
-//                    }
-//                }
+//            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+//                String timeoutString = (String) parent.getItemAtPosition(position);
+//                locationTimeout = convertMinutesToMilliseconds(Integer.parseInt(timeoutString));
 //            }
-//        };
+//
+//            @Override
+//            public void onNothingSelected(AdapterView<?> parent) {
+//                // Do nothing
+//            }
+//        });
+//
+//        spinnerDistance.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+//            @Override
+//            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+//                String distanceString = (String) parent.getItemAtPosition(position);
+//                minDistance = Float.parseFloat(distanceString);
+//            }
+//
+//            @Override
+//            public void onNothingSelected(AdapterView<?> parent) {
+//                // Do nothing
+//            }
+//        });
+//
+//        // Set the onClickListener for the button
+//        btnSetValues.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                // Call the location service method with the selected values
+//                startLocationService(locationTimeout, minDistance);
+//            }
+//        });
 //
 //        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 //            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
@@ -197,56 +270,27 @@ public class MainActivity extends AppCompatActivity {
 //        });
 //    }
 //
-//    private void startLocationUpdates() {
-//        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-//            return;
-//        }
-//        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null);
-//    }
-//
 //    private void checkBackgroundLocationPermission() {
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 //            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 //                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, BACKGROUND_LOCATION_PERMISSION_REQUEST_CODE);
 //            } else {
-//                startLocationUpdates();
+//                startLocationService(locationTimeout, minDistance);
 //            }
 //        } else {
-//            startLocationUpdates();
+//            startLocationService(locationTimeout, minDistance);
 //        }
 //    }
 //
-//    @Override
-//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-//        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-//            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                checkBackgroundLocationPermission();
-//                Toast.makeText(MainActivity.this, "Location permission granted.", Toast.LENGTH_SHORT).show();
-//            } else {
-//                Log.w(TAG, "Location permission not granted.");
-//                Toast.makeText(MainActivity.this, "Location permission denied.", Toast.LENGTH_SHORT).show();
-//            }
-//        } else if (requestCode == BACKGROUND_LOCATION_PERMISSION_REQUEST_CODE) {
-//            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                startLocationUpdates();
-//                Toast.makeText(MainActivity.this, "Background location permission granted.", Toast.LENGTH_SHORT).show();
-//            } else {
-//                Log.w(TAG, "Background location permission not granted.");
-//                Toast.makeText(MainActivity.this, "Background location permission denied.", Toast.LENGTH_SHORT).show();
-//            }
-//        }
+//    private void startLocationService(int locationTimeout, float minDistance) {
+//        Intent intent = new Intent(this, LocationService.class);
+//        intent.putExtra("locationTimeout", locationTimeout);
+//        intent.putExtra("minDistance", minDistance);
+//        startService(intent);
+//        //Log.d(TAG, "New Timeout: " + locationTimeout + ", New Distance: " +minDistance);
 //    }
 //
-//    @Override
-//    protected void onResume() {
-//        super.onResume();
-//        startLocationUpdates();
-//    }
-//
-//    @Override
-//    protected void onPause() {
-//        super.onPause();
-//        fusedLocationClient.removeLocationUpdates(locationCallback);
+//    private int convertMinutesToMilliseconds(int minutes) {
+//        return minutes * MINUTES_TO_MILLISECONDS;
 //    }
 //}

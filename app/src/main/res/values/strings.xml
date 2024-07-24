@@ -1,3 +1,20 @@
 <resources>
-    <string name="app_name">Location Tracker</string>
+    <string name="app_name">Time Capture</string>
+    <string-array name="timeout_intervals">
+        <!--minutes-->
+        <item>1</item>
+        <item>3</item>
+        <item>5</item>
+        <item>10</item>
+        <item>20</item>
+        <item>30</item>
+    </string-array>
+    <string-array name="distance_intervals">
+        <!--meters-->
+        <item>10</item>
+        <item>20</item>
+        <item>50</item>
+        <item>100</item>
+        <item>200</item>
+    </string-array>
 </resources>
