@@ -30,9 +30,11 @@
         <service
             android:name=".LocationService"
             android:foregroundServiceType="location"
-            tools:ignore="ForegroundServicePermission" />
+            android:enabled="true"
+            android:exported="false" />
 
         <!--        Adding new views-->
+        <activity android:name=".IntroActivity" />
         <activity android:name=".ViewDatesActivity" />
         <activity android:name=".MapActivity"/>
         <activity android:name=".MainActivity"

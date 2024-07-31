@@ -1,83 +1,40 @@
-<?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <TextView
-        android:id="@+id/labelTimeout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Select Timeout (minutes):"
-        android:layout_marginTop="20dp"
-        android:layout_centerHorizontal="true" />
-
-    <Spinner
-        android:id="@+id/spinnerTimeout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/labelTimeout"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="10dp"
-        android:padding="12dp"
-        android:minHeight="48dp" />
-
+    <!-- Selected Timeout -->
     <TextView
         android:id="@+id/selectedTimeout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Selected Timeout: 3 minutes"
-        android:layout_below="@id/spinnerTimeout"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="10dp" />
-
-    <TextView
-        android:id="@+id/labelDistance"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Select Distance (meters):"
-        android:layout_below="@id/selectedTimeout"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="20dp" />
 
-    <Spinner
-        android:id="@+id/spinnerDistance"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/labelDistance"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="10dp"
-        android:padding="12dp"
-        android:minHeight="48dp" />
-
+    <!-- Selected Distance -->
     <TextView
         android:id="@+id/selectedDistance"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Selected Distance: 50 meters"
-        android:layout_below="@id/spinnerDistance"
+        android:layout_below="@id/selectedTimeout"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="10dp" />
 
-    <Button
-        android:id="@+id/btnSetValues"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Set Values"
-        android:layout_below="@id/selectedDistance"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp" />
-
+    <!-- View Dates Button -->
     <Button
         android:id="@+id/btnViewDates"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="View Data"
-        android:layout_below="@id/btnSetValues"
+        android:text="View Dates"
+        android:layout_below="@id/selectedDistance"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp" />
+        android:layout_marginTop="20dp"
+        android:padding="12dp" />
 
+    <!-- View Map Button -->
     <Button
         android:id="@+id/btnViewMap"
         android:layout_width="wrap_content"
@@ -85,5 +42,7 @@
         android:text="View Map"
         android:layout_below="@id/btnViewDates"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp" />
+        android:layout_marginTop="20dp"
+        android:padding="12dp" />
+
 </RelativeLayout>

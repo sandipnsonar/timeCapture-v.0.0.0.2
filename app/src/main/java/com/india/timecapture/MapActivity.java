@@ -49,9 +49,9 @@ public class MapActivity extends AppCompatActivity {
             @Override
             public void run() {
                 loadMarkers();
-                handler.postDelayed(this, 180000); // 3 minutes
+                handler.postDelayed(this, 60000); // 3 minutes
             }
-        }, 180000); // 3 minutes
+        }, 60000); // 3 minutes
     }
 
     @Override
